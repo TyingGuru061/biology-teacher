@@ -1,3 +1,3 @@
 streamlit
 groq
-st-gsheets-connection
+gspread
