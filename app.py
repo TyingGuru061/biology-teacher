@@ -108,12 +108,11 @@ if prompt := st.chat_input("Ask about DNA, Osmosis, or take a quiz..."):
 
     # Generate AI Response
     with st.chat_message("assistant"):
-        # We always ensure the system prompt with LATEST stats is sent
-        # 1. Capture the fixed system instructions
+        # SLIDING WINDOW LOGIC: 
+        # Always send the System Prompt + the last 10 messages to avoid context crashing
         system_msg = {"role": "system", "content": SYSTEM_PROMPT}
         last_conversations = st.session_state.memory["messages"][-10:] 
         current_msgs = [system_msg] + [m for m in last_conversations if m["role"] != "system"]
-        current_msgs[0] = {"role": "system", "content": SYSTEM_PROMPT}
         
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -122,6 +121,12 @@ if prompt := st.chat_input("Ask about DNA, Osmosis, or take a quiz..."):
         answer = completion.choices[0].message.content
         st.markdown(answer)
 
-    # Save Assistant Response & Sync to Google Sheets
+    # Save Assistant Response
     st.session_state.memory["messages"].append({"role": "assistant", "content": answer})
+    
+    # PREVENT GOOGLE SHEETS OVERFLOW:
+    # Keep only the last 20 messages in long-term storage
+    st.session_state.memory["messages"] = st.session_state.memory["messages"][-20:]
+    
+    # Sync to Google Sheets
     save_memory(st.session_state.memory)
