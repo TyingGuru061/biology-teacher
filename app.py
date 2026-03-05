@@ -109,7 +109,10 @@ if prompt := st.chat_input("Ask about DNA, Osmosis, or take a quiz..."):
     # Generate AI Response
     with st.chat_message("assistant"):
         # We always ensure the system prompt with LATEST stats is sent
-        current_msgs = st.session_state.memory["messages"].copy()
+        # 1. Capture the fixed system instructions
+        system_msg = {"role": "system", "content": SYSTEM_PROMPT}
+        last_conversations = st.session_state.memory["messages"][-10:] 
+        current_msgs = [system_msg] + [m for m in last_conversations if m["role"] != "system"]
         current_msgs[0] = {"role": "system", "content": SYSTEM_PROMPT}
         
         completion = client.chat.completions.create(
